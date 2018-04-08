@@ -20,9 +20,9 @@ from std_srvs.srv import Empty
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState
 
-TEST_FOLDA = "/home/iwata/exp_ws/src/hsrb_joy_controller/src/new_act/action"
-CAT = ["box","door","fridge","pettbotle"]
-#CAT = ["doll","drink","table","button","fruit"]
+TEST_FOLDA = "new_act/action"
+#CAT = ["box","door","fridge","pettbotle"]
+CAT = ["doll","drink","table","button","fruit"]
 
 CAT_OBJ={"pettbotle":[0,1,2,3,4,5,6],
          "box":[7],
