@@ -1,0 +1,6 @@
+<launch>  
+  <node name="marker_publisher" pkg="gp_hsmm_action" type="marker_publisher.py" />
+  <node name="hand_controller" pkg="gp_hsmm_action" type="hand_controller_simulate.py" />
+  <node name="tf_pulser" pkg="gp_hsmm_action" type="tfpulser.py" />
+  <node name="rosbag_database" pkg="rosbag_database" type="bag_db_sample.py" />
+</launch>
