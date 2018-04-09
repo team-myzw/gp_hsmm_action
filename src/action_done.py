@@ -22,7 +22,7 @@ from sensor_msgs.msg import JointState
 
 TEST_FOLDA = "new_act/action"
 #CAT = ["box","door","fridge","pettbotle"]
-CAT = ["doll","drink","table","button","fruit"]
+CAT = ["button","table","doll","fruit","drink"]
 
 CAT_OBJ={"pettbotle":[0,1,2,3,4,5,6],
          "box":[7],
