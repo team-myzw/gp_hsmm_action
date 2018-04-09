@@ -76,7 +76,7 @@ class ObjectGetter(object):
     def __init__(self, robot):
         self.body = planning_program.JointGroup()
         self.body.angular_weight = 0.5
-        self.body.linear_weight = 2.0
+        self.body.linear_weight = 50.0
         self.joint_group = robot.get('whole_body', robot.Items.JOINT_GROUP)
         self.buf = tf2_ros.Buffer()
         self._lis = tf2_ros.TransformListener(self.buf)
@@ -406,7 +406,7 @@ class ObjectGetter(object):
                 else:
                     q = qxyzw2
                 obj_pose.extend(q)
-            self.body.angular_weight = 50.
+            self.body.angular_weight = 0.5
             self.body.linear_weight = 50.
             c = self.planner.make_trajector(actor[i], end_effect, 1., obj_pose, CAT[object_category],back_)
             for j in range(len(c[0])):
