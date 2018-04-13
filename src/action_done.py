@@ -406,7 +406,7 @@ class ObjectGetter(object):
                 else:
                     q = qxyzw2
                 obj_pose.extend(q)
-            self.body.angular_weight = 0.5
+            self.body.angular_weight = 25.5
             self.body.linear_weight = 50.
             c = self.planner.make_trajector(actor[i], end_effect, 1., obj_pose, CAT[object_category],back_)
             for j in range(len(c[0])):
