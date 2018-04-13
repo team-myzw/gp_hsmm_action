@@ -661,7 +661,7 @@ class Planner(object):
             trajector_qxyzw.append(np.array(qxyzw_list))
             trajector_hand.append(np.array(hand_list))
         trajector = [trajector_xyz,trajector_qxyzw,trajector_hand]
-        _pow, _length=self.powers.get_actioninfo(object_category,i)
+        _pow, _length=self.powers.get_actioninfo(object_category,cls)
         length = int(np.round(_length))
         tra_xyz = trajector[0][cls]
         tra_qxyzw = trajector[1][cls]

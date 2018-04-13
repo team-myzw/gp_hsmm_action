@@ -416,6 +416,8 @@ class ObjectGetter(object):
 #            np.savetxt("{0:d}_{1:d}_{2:d}_{3:s}.csv".format(action_count,c[0],c[1],c[4]),c[2],delimiter=(","))
             action_count += 1
             act =1
+            print c[0]
+            print c[1]
             while not rospy.is_shutdown():
                 if len(c[0]) == 0:
                     break
