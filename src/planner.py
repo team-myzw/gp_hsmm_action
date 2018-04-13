@@ -358,7 +358,93 @@ class Planner(object):
             lik *= pp
             liks.append(lik)
         print liks
-        return liks, first_state, landmark_rol 
+        return liks, first_state, landmark_rol
+    
+    def calc_next_length(self, end_effector_pose, now_hand, object_pose, object_category,object_pose_inv,next_action):
+        xyz = object_pose[:3]
+        qxyzw = object_pose[3:]
+        h_xyz = end_effector_pose[:3]
+        h_qxyzw = end_effector_pose[3:]
+        x = xyz[0] - h_xyz[0]
+        y = xyz[1] - h_xyz[1]
+        z = xyz[2] - h_xyz[2]
+        xaw = 0.0
+        zaw = math.atan2(y, x)  + math.pi
+        yaw = math.atan2(z, math.sqrt(y **2 + x **2))
+        landmark_rol = {}
+        dic = {}
+        dic["e"] = [xaw,yaw,zaw]
+        dic["q"] = tf.transformations.quaternion_from_euler(xaw,yaw,zaw)
+        landmark_rol[2]=dic
+        dic = {}
+        dic["e"] = [xaw,0.0,zaw]
+        dic["q"] = tf.transformations.quaternion_from_euler(xaw,0.0,zaw) 
+        landmark_rol[1]=dic
+        dic = {}
+        exyz = tf.transformations.euler_from_quaternion(qxyzw)
+        xaw = exyz[0]
+        yaw = exyz[1]
+        zaw = exyz[2]
+        dic["e"] = [xaw,yaw,zaw]
+        dic["q"] = qxyzw
+        landmark_rol[3]=dic
+        
+#---        
+        
+        first_state={}
+        o_q = quat2quat(np.array(qxyzw),np.array(h_qxyzw))  
+        x = np.sqrt(np.power((h_xyz[0]-xyz[0]),2)+np.power((h_xyz[1]-xyz[1]),2)+np.power((h_xyz[2]-xyz[2]),2))
+        y = 0.0
+        z = 0.0
+        o = [0.0, 0.0, 0.0]
+        first_state[2] = [x,y,z]
+        x = np.sqrt(np.power((h_xyz[0]-xyz[0]),2)+np.power((h_xyz[1]-xyz[1]),2))
+        y = 0.0
+        z = np.sqrt(np.power((h_xyz[2]-xyz[2]),2))
+        first_state[1] = [x,y,z]
+###        
+        rot = tf.transformations.euler_from_quaternion(object_pose_inv[3:])
+        rot = np.array(rot)
+        pos = np.array(object_pose_inv[:3])
+        obj_pos_from_base_frame = np.array([h_xyz[0],h_xyz[1],h_xyz[2]])
+        c3_pos = calctransform(rot,pos,obj_pos_from_base_frame)
+        x = c3_pos[0]
+        y = c3_pos[1]
+        z = c3_pos[2]
+        first_state[3] = [x,y,z]
+        acts = self.actions[object_category]            
+        liks = []
+        nhand = now_hand
+        n = len(acts)
+        trans = self.trans[object_category]
+        bos = self.bos[object_category]
+        lik = 1.0
+        ac = acts[next_action]
+        cor = ac["cor"]
+        gp = ac["gp"]
+        sig = ac["sig"]
+        o = first_state[cor]
+        o.append(nhand)
+        o.extend(o_q)
+        pl = 1.0
+        for j in range(3):
+            if cor==1:
+                if j >=1:
+                    continue
+            elif cor==2:
+                if j==2:
+                    continue
+            p = gaussian(gp[0][j],sig[0][j],o[j])
+            pl *= p
+        if cor==2:
+            pl *= gaussian(gp[0][0],sig[0][0],o[0])**2
+        elif cor==1:
+            pl *=gaussian(gp[0][2],sig[0][2],o[2])
+        lik *= pl
+        p = gaussian(gp[0][3],sig[0][3],o[3])
+        lik *= p
+        return lik
+        
             
     def choose_action(self, end_effector_pose, now_hand, object_pose, object_category, calc_type=0, back_action=None, top_command_act_cls_len=[None,None]):
         xyz = object_pose[:3]
@@ -541,7 +627,7 @@ class Planner(object):
         return cl, length, tra, hand, power, end, ac, trajector, prob
 
         
-    def make_trajector(self, cls, hand_pose, now_hand,object_pose, object_category,back_action=None):
+    def make_trajector(self, cls, hand_pose, now_hand,object_pose, object_category,back_action=None,next_act=None):
         xyz = object_pose[:3]
         qxyzw = object_pose[3:]
         use_qxyzw = [-qxyzw[0],-qxyzw[1],-qxyzw[2],qxyzw[3]]
@@ -566,40 +652,9 @@ class Planner(object):
                 dic["sig"]=sig
                 cdic[i] = dic
             gp_params[j] = cdic
-            
-        acts = self.actions[object_category]            
+          
         n = len(acts)
-        nl = len(acts[0]["gp"])
-        action_liks = np.ones([n*2,nl])
-        action_liks_ano = np.ones([n*2,nl])
-        eos = self.eos[object_category]
-        for i in range(n):
-            action_liks[i] *= liks[i] * (1.0-eos[i])
-            action_liks[i+n] *= liks[i] * eos[i]
-            action_liks_ano[i] *= liks[i] * (1.0-eos[i])
-            action_liks_ano[i+n] *= liks[i] * eos[i]
-        for i in range(n):
-            _pow, _length=self.powers.get_actioninfo(object_category,i)
-            try:
-                length = int(np.round(_length))
-            except:
-                length = None
-#            print length
-            for j in range(nl):
-                if j < MIN or length == None:
-                    action_liks[i][j] = 0.0
-                    action_liks[i+n][j] = 0.0
-                    action_liks_ano[i][j] = 0.0
-                    action_liks_ano[i+n][j] = 0.0
-                else:
-                    action_liks[i][j]*= (length**j * math.exp(-length) /
-                                            math.factorial(j))
-                    action_liks[i+n][j]*=(length**j * math.exp(-length) /
-                                            math.factorial(j))
-                    action_liks_ano[i+n][j]*= (length**j * math.exp(-length) /
-                                            math.factorial(j))
-                    action_liks_ano[i][j]*= (length**j * math.exp(-length) /
-                                            math.factorial(j))
+
 
 
         tra_xyz = []
@@ -626,49 +681,60 @@ class Planner(object):
         trajector_xyz = []
         trajector_qxyzw = []
         trajector_hand = []
+        if next_act == None:
+            nex = cls
+        else:
+            nex = next_act
+            
+        i = cls
+        ac = acts[i]
+        cor = ac["cor"]
+        gp = ac["gp"]
+        sig = ac["sig"]
+        dic = landmark_rol[cor]
+        e = dic["e"]
+        q = dic["q"]
+        use_qxyzw = [-qxyzw[0],-qxyzw[1],-qxyzw[2],qxyzw[3]]
 
-        for i in range(n):
-            ac = acts[i]
-            cor = ac["cor"]
-            gp = ac["gp"]
-            sig = ac["sig"]
-            dic = landmark_rol[cor]
-            e = dic["e"]
-            q = dic["q"]
-            use_qxyzw = [-qxyzw[0],-qxyzw[1],-qxyzw[2],qxyzw[3]]
-
-            xyz_list = []
-            qxyzw_list = []
-            hand_list = []
-    #        print xyz
-            rot = e
-            rot = np.array(rot)
-            pos = np.array(xyz)
-            txyz = tra_xyz[i]
-            tqxyzw = tra_qxyzw[i]
-            thand = tra_hand[i]
-            for j in range(len(txyz)):
-                obj_pos_from_base_frame = np.array([txyz[j][0],txyz[j][1],txyz[j][2]])
-                base_pos = calctransform(rot,pos,obj_pos_from_base_frame)
-                q = quat2quat(np.array(use_qxyzw), np.array(tqxyzw[j]))
-                xyz_list.append(base_pos)
-                qxyzw_list.append(q)
-                hand_list.append(thand[j])
-            if cor in [1,2]:
-                trajector_xyz.append(np.array(smooth(xyz_list)))
-            else:
-                trajector_xyz.append(np.array(smooth(xyz_list)))
-            trajector_qxyzw.append(np.array(qxyzw_list))
-            trajector_hand.append(np.array(hand_list))
+        xyz_list = []
+        qxyzw_list = []
+        hand_list = []
+#        print xyz
+        rot = e
+        rot = np.array(rot)
+        pos = np.array(xyz)
+        txyz = tra_xyz[i]
+        tqxyzw = tra_qxyzw[i]
+        thand = tra_hand[i]
+        liks = []
+        for j in range(len(txyz)):
+            obj_pos_from_base_frame = np.array([txyz[j][0],txyz[j][1],txyz[j][2]])
+            base_pos = calctransform(rot,pos,obj_pos_from_base_frame)
+            q = quat2quat(np.array(use_qxyzw), np.array(tqxyzw[j]))
+            lik = self.calc_next_length(np.array([base_pos[0],base_pos[1],base_pos[2],q[0],q[1],q[2],q[3]]), thand[j], object_pose, object_category, object_inv,nex)
+            xyz_list.append(base_pos)
+            qxyzw_list.append(q)
+            hand_list.append(thand[j])
+            liks.append(lik)
+        trajector_xyz=np.array(smooth(xyz_list))
+        trajector_qxyzw=np.array(qxyzw_list)
+        trajector_hand=np.array(hand_list)
         trajector = [trajector_xyz,trajector_qxyzw,trajector_hand]
-        _pow, _length=self.powers.get_actioninfo(object_category,cls)
-        length = int(np.round(_length))
-        tra_xyz = trajector[0][cls]
-        tra_qxyzw = trajector[1][cls]
+        if next_act==None:
+            _pow, _length=self.powers.get_actioninfo(object_category,cls)
+            length = int(np.round(_length))
+        else:
+            length = np.argmax(liks)
+        if cor in [1,2]:
+#            tra_xyz = smooth(trajector[0][:length])
+            tra_xyz = trajector[0][:length]
+        else:
+            tra_xyz = trajector[0][:length]
+        tra_qxyzw = trajector[1][:length]
+        hand = trajector[2][:length]
         tra = []
         for i in range(length):
             tra.append([tra_xyz[i],tra_qxyzw[i]])
-        hand = trajector[2][cls][:length]
         return tra, hand
         
     def set_motion(self,bow,object_category):

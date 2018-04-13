@@ -386,6 +386,10 @@ class ObjectGetter(object):
         
         actor = self.planner.set_motion(act_list,object_category)
         for i in range(len(actor)):
+            if i == len(actor)-1:
+                next_act = None
+            else:
+                next_act = actor[i+1]
             hand = self.buf.lookup_transform("odom","hand_palm_link",rospy.Time.now(),rospy.Duration(3.0))
             h = hand.transform
             end_effect = [h.translation.x, h.translation.y, h.translation.z, h.rotation.x, h.rotation.y, h.rotation.z,h.rotation.w]
@@ -408,7 +412,7 @@ class ObjectGetter(object):
                 obj_pose.extend(q)
             self.body.angular_weight = 25.5
             self.body.linear_weight = 50.
-            c = self.planner.make_trajector(actor[i], end_effect, 1., obj_pose, CAT[object_category],back_)
+            c = self.planner.make_trajector(actor[i], end_effect, 1., obj_pose, CAT[object_category],back_,next_act)
             for j in range(len(c[0])):
                 st = self.set_stamp(c[0][j][0],c[0][j][1],"act_{}".format(j))
                 self.broadcast(st)
@@ -443,7 +447,7 @@ class ObjectGetter(object):
         for jj in j:
             csv = [jj.header.stamp.to_sec(), jj.twist.twist.linear.x,jj.twist.twist.linear.y,jj.twist.twist.angular.z]
             csvs.append(csv)
-        np.savetxt("base.csv",csvs,delimiter=",")            
+        np.savetxt("base.csv",csvs,delimiter=",")
         ############
         req = RosbagPlayRequest()
         req.name = "act"
