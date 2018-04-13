@@ -24,5 +24,4 @@ action.action_crest(pos,traj,id)
 hsrの初期姿勢への戻し方  
 1. ihsrbを起動する  
 2. whole_body.move_to_neutral() を実行  
-3. omni_base.go(0.,0.,0.,ralative=False) を実行  
-
+3. omni_base.go(0.,0.,0.,relative=False) を実行  
