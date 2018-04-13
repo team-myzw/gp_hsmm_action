@@ -4,6 +4,7 @@ import rospy
 import numpy as np
 import os
 import sys
+import math
 
 FILE = "class{0:03d}.npy"
 POWSET=["N","S","H"]
@@ -60,6 +61,8 @@ class Manger(object):
         cd = d[classnum]
         length = cd["avelen"]
         pow_type = cd["pow"]
+        if math.isnan(length):
+            length = 0
         if pow_type=="NNN":
             pow_type = None
         return pow_type, length

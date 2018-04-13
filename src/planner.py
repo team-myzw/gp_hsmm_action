@@ -666,7 +666,7 @@ class Planner(object):
         tra_xyz = trajector[0][cls]
         tra_qxyzw = trajector[1][cls]
         tra = []
-        for i in range(len(tra_xyz)):
+        for i in range(length):
             tra.append([tra_xyz[i],tra_qxyzw[i]])
         hand = trajector[2][cls]
         return tra, hand
