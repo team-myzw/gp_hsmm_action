@@ -12,7 +12,7 @@ action = action_done.ObjectGetter(robot)
 6. sigverseをmasterに持つコンソールを立ち上げる  
 7. sigverseをmasterに持つコンソールで,python marker_publisher.pyを実行する  
 8. sigverse上の対象物体の位置を取得する:以降この物体位置をpos=[x,y,z]とする  
-9. 対象物のカテゴリ番号(action_doneのプログラム内参照: ["doll","drink","table","button","fruit"])を選択:id=0  
+9. 対象物のカテゴリ番号(action_doneのプログラム内参照: ["button","table","doll","fruit","drink"])を選択:id=0  
 10. localのシミュレータのHSRが初期位置にいることを確認し,sigverse上のHSRと同様の姿勢に変更する.(初期姿勢が望ましい)  
 11. 対象物のカテゴリに対応した動作Foldaより動作起動を選択する.対応したクラスとそのクラスの実行回数を選択する.  
 例クラス０を０回,クラス1を1回,クラス2を０回選択する場合/traj=[0,1,0]  
