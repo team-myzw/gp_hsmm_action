@@ -417,6 +417,8 @@ class ObjectGetter(object):
             action_count += 1
             act =1
             while not rospy.is_shutdown():
+                if len(c[0]) == 0:
+                    break
                 if act == len(c[0]):
                     break
                 try:
