@@ -422,7 +422,7 @@ class ObjectGetter(object):
                 if act == len(c[0]):
                     break
                 try:
-                    self.body.move_cartesian_path(c[0],c[1],ref_frame_id="odom")
+                    self.body.move_cartesian_path(c[0][::act],c[1][::act],ref_frame_id="odom")
                     break
                 except:
                     act+=1

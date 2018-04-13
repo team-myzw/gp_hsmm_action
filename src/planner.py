@@ -668,7 +668,7 @@ class Planner(object):
         tra = []
         for i in range(length):
             tra.append([tra_xyz[i],tra_qxyzw[i]])
-        hand = trajector[2][cls]
+        hand = trajector[2][cls][:length]
         return tra, hand
         
     def set_motion(self,bow,object_category):
